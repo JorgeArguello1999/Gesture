@@ -2,3 +2,4 @@
 hand_landmarker.task
 __pycache__/
 *.pyc
+modules/__pycache__/drawing.cpython-312.pyc
