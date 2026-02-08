@@ -14,11 +14,11 @@ class HandControlMode:
         VisionRunningMode = mp.tasks.vision.RunningMode
 
         # Create a hand landmarker instance with the video mode:
-        model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'hand_landmarker.task')
+        model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'models', 'hand_landmarker.task')
         
         # Check if model exists
         if not os.path.exists(model_path):
-             raise FileNotFoundError(f"Model file not found at {model_path}. Please run download_model.py")
+             raise FileNotFoundError(f"Model file not found at {model_path}. Please run check_models.py or tools/download_model.py")
 
         options = HandLandmarkerOptions(
             base_options=BaseOptions(model_asset_path=model_path),
@@ -34,7 +34,7 @@ class HandControlMode:
         FaceLandmarker = mp.tasks.vision.FaceLandmarker
         FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
         
-        face_model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'face_landmarker.task')
+        face_model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'models', 'face_landmarker.task')
         if not os.path.exists(face_model_path):
              # Fallback if not downloaded, though we expect it is
              print("Face model not found, Gaze Safety disabled.")

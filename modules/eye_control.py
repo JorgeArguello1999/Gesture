@@ -13,10 +13,10 @@ class EyeControlMode:
         FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
         VisionRunningMode = mp.tasks.vision.RunningMode
 
-        model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'face_landmarker.task')
+        model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'models', 'face_landmarker.task')
         
         if not os.path.exists(model_path):
-             raise FileNotFoundError(f"Model file not found at {model_path}. Please run download_model.py")
+             raise FileNotFoundError(f"Model file not found at {model_path}. Please run tools/download_model.py")
 
         options = FaceLandmarkerOptions(
             base_options=BaseOptions(model_asset_path=model_path),

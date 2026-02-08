@@ -1,6 +1,7 @@
 import cv2
 import sys
 import os
+import subprocess
 
 # Add the current directory to sys.path to ensure modules can be imported
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -9,7 +10,38 @@ from modules.drawing import DrawingMode
 from modules.hand_control import HandControlMode
 from modules.eye_control import EyeControlMode
 
+def check_and_download_models():
+    """Checks if models exist, if not, runs the download script."""
+    models_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+    hand_model = os.path.join(models_dir, "hand_landmarker.task")
+    face_model = os.path.join(models_dir, "face_landmarker.task")
+    
+    missing = False
+    if not os.path.exists(hand_model):
+        print(f"Missing model: {hand_model}")
+        missing = True
+    if not os.path.exists(face_model):
+        print(f"Missing model: {face_model}")
+        missing = True
+        
+    if missing:
+        print("Models are missing. Attempting to download...")
+        script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools", "download_model.py")
+        try:
+            subprocess.run([sys.executable, script_path], check=True)
+            print("Models downloaded successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to download models: {e}")
+            sys.exit(1)
+        except Exception as e:
+             print(f"An error occurred while downloading models: {e}")
+             sys.exit(1)
+    else:
+        print("All models verified.")
+
 def main():
+    check_and_download_models()
+
     cap = cv2.VideoCapture(0)
     
     # Increase resolution for better UI
