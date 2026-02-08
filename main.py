@@ -100,6 +100,10 @@ def main():
                 current_mode = "EYE_CONTROL"
             elif x4_start < x < x4_end and y4_start < y < y4_end:
                 sys.exit()
+        
+        elif current_mode == "DRAWING" and event == cv2.EVENT_LBUTTONDOWN:
+            if drawing_mode:
+                drawing_mode.handle_click(x, y)
 
     cv2.namedWindow('Gesture App')
     cv2.setMouseCallback('Gesture App', menu_callback)

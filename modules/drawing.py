@@ -36,6 +36,23 @@ class DrawingMode:
         self.y1 = None
         self.imAux = None
         self.needs_clear = False
+        
+        # Calibration State
+        self.click_point = None
+
+    def handle_click(self, x, y):
+        """Receives click coordinates from main loop for calibration"""
+        # If clicked in header, ignore (handled by UI logic typically, but UI logic depends on detection)
+        # Actually, let's allow clicking ANYWHERE to calibrate if we want, 
+        # BUT we have UI buttons at the top. 
+        # Let's say: Click on top bar = UI Action. Click on canvas = Calibration (if enabled)
+        # For simplicity, let's just assume all clicks NOT on buttons are calibration attempts?
+        # Or better: Add a "Calibrate" button to the UI to toggle a mode?
+        # User request: "quiero que pueda seguir otro color".
+        # Simplest UX: Just click on the object you want to track.
+        # But we need to avoid accidental recalibration when drawing.
+        # Let's add a "Pick Color" button to the UI.
+        self.click_point = (x, y)
 
     def process(self, frame):
         h, w, c = frame.shape
@@ -49,8 +66,31 @@ class DrawingMode:
         self.buttons[-1]["center"] = (w - 80, 40)
 
         frameHSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        
+        # Handle Calibration Click
+        if self.click_point:
+            cx, cy = self.click_point
+            # Check if inside UI header
+            if cy < self.header_height:
+                 pass # UI click, handled in loop logic or via check_ui_interaction?
+                 # Wait, interaction logic was reliant on detecting the marker moving over buttons.
+                 # Mouse click is different. 
+                 # Let's just use the mouse click for calibration for now to keep it simple as requested.
+            else:
+                # Sample Color
+                pixel = frameHSV[cy, cx]
+                h_val, s_val, v_val = pixel
+                
+                # Define new range with some tolerance
+                # Tolerance: H +/- 10, S +/- 40, V +/- 40
+                self.celesteBajo = np.array([max(0, h_val - 10), max(50, s_val - 40), max(50, v_val - 40)], np.uint8)
+                self.celesteAlto = np.array([min(179, h_val + 10), 255, 255], np.uint8)
+                
+                print(f"Calibrated to: HSV[{h_val}, {s_val}, {v_val}]")
+            
+            self.click_point = None
 
-        # Detect Marker (Blue)
+        # Detect Marker
         mask = cv2.inRange(frameHSV, self.celesteBajo, self.celesteAlto)
         mask = cv2.erode(mask, None, iterations=1)
         mask = cv2.dilate(mask, None, iterations=2)
@@ -63,6 +103,8 @@ class DrawingMode:
         cv2.rectangle(frame, (0, 0), (w, self.header_height), (50, 50, 50), -1) # Header BG
         cv2.rectangle(frame, (0, 0), (w, self.header_height), (100, 100, 100), 2) # Border
         
+        cv2.putText(frame, "CLICK object to track it!", (w//2 - 100, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+
         for btn in self.buttons:
             # Draw Button
             cv2.circle(frame, btn["center"], self.button_radius, btn["color"], -1)
