@@ -91,8 +91,8 @@ class DrawingMode:
 
         # Clear Screen
         cv2.rectangle(frame, (300, 0), (400, 50), self.colorLimpiarPantalla, 1)
-        cv2.putText(frame, 'Limpiar', (320, 20), 6, 0.6, self.colorLimpiarPantalla, 1, cv2.LINE_AA)
-        cv2.putText(frame, 'pantalla', (320, 40), 6, 0.6, self.colorLimpiarPantalla, 1, cv2.LINE_AA)
+        cv2.putText(frame, 'Clear', (320, 20), 6, 0.6, self.colorLimpiarPantalla, 1, cv2.LINE_AA)
+        cv2.putText(frame, 'Screen', (320, 40), 6, 0.6, self.colorLimpiarPantalla, 1, cv2.LINE_AA)
 
         # Thickness
         cv2.rectangle(frame, (490, 0), (540, 50), (0, 0, 0), self.grosorPeque)

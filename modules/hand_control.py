@@ -3,50 +3,68 @@ import numpy as np
 import mediapipe as mp
 import pyautogui
 import time
+import os
 
 class HandControlMode:
     def __init__(self):
-        # Explicitly try to get solutions if not available in top level
-        try:
-            self.mp_hands = mp.solutions.hands
-            self.mp_drawing = mp.solutions.drawing_utils
-        except AttributeError:
-            # Fallback or re-raise if installation is broken
-            import mediapipe.python.solutions.hands as mp_hands
-            import mediapipe.python.solutions.drawing_utils as mp_drawing
-            self.mp_hands = mp_hands
-            self.mp_drawing = mp_drawing
+        # Mediapipe Tasks API setup
+        BaseOptions = mp.tasks.BaseOptions
+        HandLandmarker = mp.tasks.vision.HandLandmarker
+        HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
+        VisionRunningMode = mp.tasks.vision.RunningMode
 
-        self.hands = self.mp_hands.Hands(
-            static_image_mode=False,
-            max_num_hands=1,
-            min_detection_confidence=0.7,
-            min_tracking_confidence=0.5
-        )
+        # Create a hand landmarker instance with the video mode:
+        model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'hand_landmarker.task')
+        
+        # Check if model exists
+        if not os.path.exists(model_path):
+             raise FileNotFoundError(f"Model file not found at {model_path}. Please run download_model.py")
+
+        options = HandLandmarkerOptions(
+            base_options=BaseOptions(model_asset_path=model_path),
+            running_mode=VisionRunningMode.VIDEO,
+            num_hands=1,
+            min_hand_detection_confidence=0.5,
+            min_hand_presence_confidence=0.5,
+            min_tracking_confidence=0.5)
+        
+        self.landmarker = HandLandmarker.create_from_options(options)
+        
         self.screen_w, self.screen_h = pyautogui.size()
         self.prev_x, self.prev_y = 0, 0
         self.smoothening = 5
         self.last_click_time = 0
+        self.timestamp_ms = 0
 
     def process(self, frame):
         h, w, c = frame.shape
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = self.hands.process(rgb_frame)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+        
+        # Calculate timestamp (simulated for simplicity, ideally should use real frame timestamp)
+        self.timestamp_ms += int(1000/30) # Assuming 30fps
+        
+        # Detect hands
+        detection_result = self.landmarker.detect_for_video(mp_image, self.timestamp_ms)
 
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                self.mp_drawing.draw_landmarks(frame, hand_landmarks, self.mp_hands.HAND_CONNECTIONS)
+        if detection_result.hand_landmarks:
+            for hand_landmarks in detection_result.hand_landmarks:
+                # Draw landmarks (Manual drawing since we don't have drawing_utils compatible with Tasks result directly easily available without conversion, 
+                # but we can implement a simple drawer or just use the coordinates)
                 
                 # Get landmarks
-                landmarks = hand_landmarks.landmark
-                
                 # Index finger tip (ID 8)
-                index_x = int(landmarks[8].x * w)
-                index_y = int(landmarks[8].y * h)
+                index_x = int(hand_landmarks[8].x * w)
+                index_y = int(hand_landmarks[8].y * h)
                 
                 # Thumb tip (ID 4)
-                thumb_x = int(landmarks[4].x * w)
-                thumb_y = int(landmarks[4].y * h)
+                thumb_x = int(hand_landmarks[4].x * w)
+                thumb_y = int(hand_landmarks[4].y * h)
+
+                # Draw simple landmarks
+                cv2.circle(frame, (index_x, index_y), 10, (255, 0, 255), cv2.FILLED)
+                cv2.circle(frame, (thumb_x, thumb_y), 10, (255, 0, 255), cv2.FILLED)
+                cv2.line(frame, (index_x, index_y), (thumb_x, thumb_y), (255, 0, 255), 3)
 
                 # Convert to screen coordinates with smoothing
                 # Simple smoothing
@@ -65,6 +83,7 @@ class HandControlMode:
                      pass
                 
                 # Check for click (distance between index and thumb)
+                # Normalized distance might be better, but pixel distance is what we have
                 distance = np.hypot(index_x - thumb_x, index_y - thumb_y)
                 
                 if distance < 30: # Threshold for click
