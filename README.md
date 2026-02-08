@@ -1,21 +1,28 @@
-# Virtual Gesture Drawing
+# Gesture Control & Virtual Drawing
 
-A Python application that turns your webcam feed into a virtual canvas. By tracking a specific color marker (light blue by default), users can draw in the air.
+A Python application that combines virtual drawing with hand gesture control. Use your webcam to draw in the air or control your mouse cursor!
 
 ## Features
 
-- **Virtual Drawing**: Use a colored object to draw on the screen.
-- **Color Selection**: Choose from 4 colors (Yellow, Pink, Green, Light Blue) by hovering over the top-left menu.
-- **Brush Size Control**: Adjust line thickness by hovering over the top-right menu.
-- **Clear Screen**: Quickly erase the drawing by hovering over the "Clear Screen" button.
-- **Real-time Visualization**: See your drawing overlaid on the camera feed.
+### 🎨 Drawing Mode
+- **Virtual Canvas**: Draw on the screen using a colored object (default: light blue).
+- **Toolbox**:
+    - **Colors**: Select from Yellow, Pink, Green, or Light Blue by hovering over the top-left menu.
+    - **Brush Size**: Adjust thickness by hovering over the top-right menu.
+    - **Clear Screen**: Hover over the "Limpiar pantalla" button.
+
+### ✋ Control Mode
+- **Mouse Control**: Move your index finger to move the mouse cursor.
+- **Click**: Pinch your thumb and index finger together to click.
+- **Hand Tracking**: Uses MediaPipe for robust hand detection.
 
 ## Dependencies
 
-This project requires:
 - Python 3.12+
 - `opencv-python`
 - `numpy`
+- `mediapipe`
+- `pyautogui`
 
 ## Installation
 
@@ -23,17 +30,22 @@ This project requires:
 2.  Install the required packages:
 
     ```bash
-    pip install opencv-python numpy
+    pip install opencv-python numpy mediapipe pyautogui
     ```
 
 ## Usage
 
-Run the main script to start the application:
+Run the main script:
 
 ```bash
 python lector.py
 ```
 
-Ensure you have a webcam connected. The application tracks a "light blue" (celeste) color by default. You may need to adjust the HSV values in `lector.py` (`celesteBajo`, `celesteAlto`) to match your specific marker color and lighting conditions.
+### Controls
 
-Press `ESC` to exit the application.
+- **Switch Modes**: Press `m` to toggle between **Drawing Mode** and **Control Mode**.
+- **Exit**: Press `ESC`.
+
+### Configuration
+
+The application is set to track a "light blue" object in Drawing Mode. You can adjust the HSV values in `lector.py` (`self.celesteBajo`, `self.celesteAlto`) in the `DrawingMode` class if you want to use a different color marker.
