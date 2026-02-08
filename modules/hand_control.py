@@ -38,6 +38,10 @@ class HandControlMode:
         # State for click dragging
         self.is_left_clicking = False
         self.last_right_click_time = 0
+        
+        # Configure pyautogui for speed
+        pyautogui.PAUSE = 0
+        pyautogui.FAILSAFE = False # Be careful with this, but prevents some interruptions
 
     def process(self, frame):
         h, w, c = frame.shape
@@ -51,40 +55,33 @@ class HandControlMode:
         detection_result = self.landmarker.detect_for_video(mp_image, self.timestamp_ms)
 
         # Visual feedback instructions
-        cv2.putText(frame, "Right Hand: Move Cursor", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
-        cv2.putText(frame, "Left Hand: Gestures", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+        cv2.putText(frame, "Right Hand (Movement)", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        cv2.putText(frame, "Left Hand (Actions)", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
         cv2.putText(frame, "- Index+Thumb: Left Click/Drag", (30, 85), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
         cv2.putText(frame, "- Middle+Thumb: Right Click", (30, 105), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
 
         if detection_result.hand_landmarks:
             for i, hand_landmarks in enumerate(detection_result.hand_landmarks):
-                # Get handedness (Left or Right)
-                # Note: MediaPipe assumes mirrored image by default for some models, but we flipped frame.
-                # However, usually Handedness output matches the view. 
-                # Let's check the label.
                 handedness = detection_result.handedness[i][0]
                 category_name = handedness.category_name
                 
-                # Draw hand landmarks
                 self._draw_landmarks(frame, hand_landmarks)
 
-                # Need to verify if 'Right' in Mediapipe corresponds to user's Right hand in mirrored view.
-                # In mirrored view (selfie), your Right hand appears on the Left side of screen, 
-                # but Mediapipe is smart.
-                # We flipped the frame in main.py: frame = cv2.flip(frame, 1)
-                # If we raise Right hand, it looks like Right hand on screen.
-                # Mediapipe handedness usually returns 'Left' for your Right hand if not flipped, or vice versa?
-                # Actually, in selfie mode (flipped), raising Right hand -> displays on Right side.
-                # MediaPipe 'Right' usually means the person's Right hand.
+                # MIRROR MODE HANDLING:
+                # In a mirrored view (selfie camera), the physical Right Hand appears on the Right side of the screen.
+                # MediaPipe detects this geometry as a "Left" hand because it's a mirror image.
+                # So we swap the logic: 
+                # MP "Left" -> It's the User's Right Hand (Mouse Movement)
+                # MP "Right" -> It's the User's Left Hand (Clicks)
                 
-                if category_name == "Right":
+                if category_name == "Left":  # This is physically Right Hand in mirror mode
                     self._handle_right_hand(hand_landmarks, frame, w, h)
-                    cv2.putText(frame, "Right Hand (Move)", (int(hand_landmarks[0].x * w), int(hand_landmarks[0].y * h) - 20), 
+                    cv2.putText(frame, "Right Hand", (int(hand_landmarks[0].x * w), int(hand_landmarks[0].y * h) - 20), 
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 
-                elif category_name == "Left":
+                elif category_name == "Right": # This is physically Left Hand in mirror mode
                     self._handle_left_hand(hand_landmarks, frame, w, h)
-                    cv2.putText(frame, "Left Hand (Click)", (int(hand_landmarks[0].x * w), int(hand_landmarks[0].y * h) - 20), 
+                    cv2.putText(frame, "Left Hand", (int(hand_landmarks[0].x * w), int(hand_landmarks[0].y * h) - 20), 
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
 
         return frame
@@ -97,17 +94,18 @@ class HandControlMode:
             cv2.circle(frame, (x, y), 5, (200, 200, 200), -1)
 
     def _handle_right_hand(self, landmarks, frame, w, h):
-        """Right Hand: Controls Mouse Movement"""
+        """Right Hand: Controls Mouse Movement (Mapped from MP 'Left' in mirror mode)"""
         # Index finger tip (ID 8)
         index_x = int(landmarks[8].x * w)
         index_y = int(landmarks[8].y * h)
         
-        cv2.circle(frame, (index_x, index_y), 10, (0, 255, 0), cv2.FILLED) # Green cursor for movement
+        cv2.circle(frame, (index_x, index_y), 10, (0, 255, 0), cv2.FILLED) 
 
         # Convert to screen coordinates with smoothing
         curr_x = np.interp(index_x, (0, w), (0, self.screen_w))
         curr_y = np.interp(index_y, (0, h), (0, self.screen_h))
         
+        # Increase smoothening for better stability
         curr_x = self.prev_x + (curr_x - self.prev_x) / self.smoothening
         curr_y = self.prev_y + (curr_y - self.prev_y) / self.smoothening
 
@@ -119,7 +117,7 @@ class HandControlMode:
              pass
 
     def _handle_left_hand(self, landmarks, frame, w, h):
-        """Left Hand: Controls Clicks"""
+        """Left Hand: Controls Clicks (Mapped from MP 'Right' in mirror mode)"""
         # Thumb tip (ID 4)
         thumb_x = int(landmarks[4].x * w)
         thumb_y = int(landmarks[4].y * h)
@@ -135,11 +133,11 @@ class HandControlMode:
         # --- Gesture 1: Left Click / Drag (Index + Thumb) ---
         dist_left = np.hypot(index_x - thumb_x, index_y - thumb_y)
         if dist_left < 30:
-            cv2.circle(frame, (index_x, index_y), 15, (0, 255, 255), cv2.FILLED) # Yellow activation
+            cv2.circle(frame, (index_x, index_y), 15, (0, 255, 255), cv2.FILLED) 
             if not self.is_left_clicking:
                 pyautogui.mouseDown()
                 self.is_left_clicking = True
-                cv2.putText(frame, "Dragging / Holding", (50, 200), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+            cv2.putText(frame, "Dragging", (50, 200), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
         else:
             if self.is_left_clicking:
                 pyautogui.mouseUp()
@@ -148,8 +146,9 @@ class HandControlMode:
         # --- Gesture 2: Right Click (Middle + Thumb) ---
         dist_right = np.hypot(middle_x - thumb_x, middle_y - thumb_y)
         if dist_right < 30:
-            cv2.circle(frame, (middle_x, middle_y), 15, (0, 0, 255), cv2.FILLED) # Red activation
+            cv2.circle(frame, (middle_x, middle_y), 15, (0, 0, 255), cv2.FILLED)
+            # Debounce right click, but don't block
             if time.time() - self.last_right_click_time > 0.5:
-                pyautogui.rightClick()
+                pyautogui.click(button='right')
                 self.last_right_click_time = time.time()
-                cv2.putText(frame, "Right Click!", (50, 250), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                cv2.putText(frame, "Right Click", (50, 250), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)

@@ -1,2 +1,4 @@
 .venv/
 hand_landmarker.task
+__pycache__/
+*.pyc
