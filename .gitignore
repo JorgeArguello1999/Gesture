@@ -1,0 +1,5 @@
+.venv/
+hand_landmarker.task
+__pycache__/
+*.pyc
+modules/__pycache__/*
