@@ -48,6 +48,11 @@ A Python application that combines virtual drawing with advanced hand and eye ge
 - **Head Pose Tracking**: Controls the mouse cursor using your head orientation (nose tip tracking).
 - **Hands-Free**: Useful for accessible computing or when hands are occupied.
 
+### 🤖 Face Detection Mode (Tech Demo)
+- **Face Cloud**: Visualizes the facial landmarks as a point cloud for a "high-tech" look.
+- **Target Locking**: Draws a bounding box and technical data around the detected face.
+- **Confidence Score**: Displays detection confidence.
+
 ## Installation
 
 1.  Clone the repository.

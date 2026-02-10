@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from modules.drawing import DrawingMode
 from modules.hand_control import HandControlMode
 from modules.eye_control import EyeControlMode
+from modules.face_detection import FaceDetectionMode
 
 def check_and_download_models():
     """Checks if models exist, if not, runs the download script."""
@@ -61,9 +62,15 @@ def main():
     except Exception as e:
         print(f"Error initializing eye control: {e}")
         eye_control_mode = None
+
+    try:
+        face_detection_mode = FaceDetectionMode()
+    except Exception as e:
+        print(f"Error initializing face detection: {e}")
+        face_detection_mode = None
     
     # App State
-    current_mode = "MENU" # MENU, DRAWING, CONTROL, EYE_CONTROL
+    current_mode = "MENU" # MENU, DRAWING, CONTROL, EYE_CONTROL, FACE_DETECTION
     
     # Mouse Callback for Menu
     def menu_callback(event, x, y, flags, param):
@@ -75,21 +82,25 @@ def main():
         # Row 1
         # Button 1: Drawing Mode (Left)
         x1_start, x1_end = int(w * 0.1), int(w * 0.4)
-        y1_start, y1_end = int(h * 0.2), int(h * 0.4)
+        y1_start, y1_end = int(h * 0.2), int(h * 0.35)
         
         # Button 2: Hand Control (Right)
         x2_start, x2_end = int(w * 0.6), int(w * 0.9)
-        y2_start, y2_end = int(h * 0.2), int(h * 0.4)
+        y2_start, y2_end = int(h * 0.2), int(h * 0.35)
         
         # Row 2
-        # Button 3: Eye Control (Center)
-        x3_start, x3_end = int(w * 0.35), int(w * 0.65)
-        y3_start, y3_end = int(h * 0.5), int(h * 0.7)
+        # Button 3: Eye Control (Left)
+        x3_start, x3_end = int(w * 0.1), int(w * 0.4)
+        y3_start, y3_end = int(h * 0.45), int(h * 0.6)
+
+        # Button 4: Face Detection (Right - NEW)
+        x4_start, x4_end = int(w * 0.6), int(w * 0.9)
+        y4_start, y4_end = int(h * 0.45), int(h * 0.6)
         
         # Row 3
-        # Button 4: Exit (Bottom)
-        x4_start, x4_end = int(w * 0.4), int(w * 0.6)
-        y4_start, y4_end = int(h * 0.8), int(h * 0.9)
+        # Button 5: Exit (Bottom)
+        x5_start, x5_end = int(w * 0.4), int(w * 0.6)
+        y5_start, y5_end = int(h * 0.8), int(h * 0.9)
 
         if current_mode == "MENU" and event == cv2.EVENT_LBUTTONDOWN:
             if x1_start < x < x1_end and y1_start < y < y1_end:
@@ -99,6 +110,8 @@ def main():
             elif x3_start < x < x3_end and y3_start < y < y3_end:
                 current_mode = "EYE_CONTROL"
             elif x4_start < x < x4_end and y4_start < y < y4_end:
+                current_mode = "FACE_DETECTION"
+            elif x5_start < x < x5_end and y5_start < y < y5_end:
                 sys.exit()
         
         elif current_mode == "DRAWING" and event == cv2.EVENT_LBUTTONDOWN:
@@ -123,16 +136,19 @@ def main():
         if current_mode == "MENU":
             # Dynamic Layout
             x1_start, x1_end = int(w * 0.1), int(w * 0.4)
-            y1_start, y1_end = int(h * 0.2), int(h * 0.4)
+            y1_start, y1_end = int(h * 0.2), int(h * 0.35)
             
             x2_start, x2_end = int(w * 0.6), int(w * 0.9)
-            y2_start, y2_end = int(h * 0.2), int(h * 0.4)
+            y2_start, y2_end = int(h * 0.2), int(h * 0.35)
             
-            x3_start, x3_end = int(w * 0.35), int(w * 0.65)
-            y3_start, y3_end = int(h * 0.5), int(h * 0.7)
+            x3_start, x3_end = int(w * 0.1), int(w * 0.4)
+            y3_start, y3_end = int(h * 0.45), int(h * 0.6)
+
+            x4_start, x4_end = int(w * 0.6), int(w * 0.9)
+            y4_start, y4_end = int(h * 0.45), int(h * 0.6)
             
-            x4_start, x4_end = int(w * 0.4), int(w * 0.6)
-            y4_start, y4_end = int(h * 0.8), int(h * 0.9)
+            x5_start, x5_end = int(w * 0.4), int(w * 0.6)
+            y5_start, y5_end = int(h * 0.8), int(h * 0.9)
 
             # Draw Menu Background
             cv2.rectangle(frame, (0, 0), (w, h), (20, 20, 20), -1)
@@ -153,10 +169,14 @@ def main():
             # Button 3: Eye Control
             cv2.rectangle(frame, (x3_start, y3_start), (x3_end, y3_end), (0, 255, 0), -1)
             cv2.putText(frame, "Eye Control", (x3_start + 40, y3_start + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2)
+
+            # Button 4: Face Detection
+            cv2.rectangle(frame, (x4_start, y4_start), (x4_end, y4_end), (255, 100, 100), -1)
+            cv2.putText(frame, "Face Tech", (x4_start + 40, y4_start + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2)
             
-            # Button 4: Exit
-            cv2.rectangle(frame, (x4_start, y4_start), (x4_end, y4_end), (0, 0, 255), -1)
-            cv2.putText(frame, "Exit", (x4_start + 60, y4_start + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+            # Button 5: Exit
+            cv2.rectangle(frame, (x5_start, y5_start), (x5_end, y5_end), (0, 0, 255), -1)
+            cv2.putText(frame, "Exit", (x5_start + 60, y5_start + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
         elif current_mode == "DRAWING":
             frame = drawing_mode.process(frame)
@@ -181,6 +201,17 @@ def main():
                     print(f"Runtime error in eye control: {e}")
             else:
                  cv2.putText(frame, "Eye Control Disabled (Error)", (10, 440), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            
+            cv2.putText(frame, "Press 'm' for Menu", (w - 200, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+
+        elif current_mode == "FACE_DETECTION":
+            if face_detection_mode:
+                try:
+                    frame = face_detection_mode.process(frame)
+                except Exception as e:
+                    print(f"Runtime error in face detection: {e}")
+            else:
+                 cv2.putText(frame, "Face Detection Disabled (Error)", (10, 440), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
             
             cv2.putText(frame, "Press 'm' for Menu", (w - 200, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
 

@@ -83,8 +83,15 @@ class DrawingMode:
                 
                 # Define new range with some tolerance
                 # Tolerance: H +/- 10, S +/- 40, V +/- 40
-                self.celesteBajo = np.array([max(0, h_val - 10), max(50, s_val - 40), max(50, v_val - 40)], np.uint8)
-                self.celesteAlto = np.array([min(179, h_val + 10), 255, 255], np.uint8)
+                # Use int32 to avoid overflow during calculation, then clip
+                h_low = max(0, int(h_val) - 10)
+                s_low = max(50, int(s_val) - 40)
+                v_low = max(50, int(v_val) - 40)
+                
+                h_high = min(179, int(h_val) + 10)
+                
+                self.celesteBajo = np.array([h_low, s_low, v_low], np.uint8)
+                self.celesteAlto = np.array([h_high, 255, 255], np.uint8)
                 
                 print(f"Calibrated to: HSV[{h_val}, {s_val}, {v_val}]")
             
