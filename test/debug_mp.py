@@ -1,4 +1,10 @@
 import mediapipe as mp
+import sys
+import os
+
+# Add parent directory to path to allow importing project modules
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 print(f"MP dir: {dir(mp)}")
 try:
     import mediapipe.solutions

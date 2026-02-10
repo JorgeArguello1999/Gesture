@@ -22,7 +22,7 @@ class FaceDetectionMode:
             base_options=base_options,
             output_face_blendshapes=True,
             output_facial_transformation_matrixes=True,
-            num_faces=1)
+            num_faces=5)
         self.landmarker = vision.FaceLandmarker.create_from_options(options)
         
         # Connections for manual drawing
@@ -39,8 +39,8 @@ class FaceDetectionMode:
         
         # Visualize
         if detection_result.face_landmarks:
-            for face_landmarks in detection_result.face_landmarks:
-                
+            # Re-implement loop with enumeration for IDs
+            for i, face_landmarks in enumerate(detection_result.face_landmarks):
                 # Manual Drawing of Mesh (Point Cloud)
                 points = []
                 for lm in face_landmarks:
@@ -49,10 +49,6 @@ class FaceDetectionMode:
                 # Draw Key Points as Green Dots (Tech Cloud)
                 for pt in points:
                     cv2.circle(frame, pt, 1, (0, 255, 0), -1)
-                
-                # Draw Key Points (optional, maybe too crowded)
-                # for pt in points:
-                #    cv2.circle(frame, pt, 1, (0, 255, 255), -1)
 
                 # Draw Bounding Box
                 x_values = [p[0] for p in points]
@@ -70,19 +66,13 @@ class FaceDetectionMode:
                 x_max = min(w, x_max + margin)
                 y_max = min(h, y_max + margin)
                 
-                # Draw Tech Box
-                # Corner brackets instead of full rect? Or full rect.
-                # Full rect for now + HUD elements.
                 cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-                
-                # Tech Label
                 cv2.putText(frame, f"TARGET LOCKED", (x_min, y_min - 10), 
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 
-                # Mock Analysis Data
                 cv2.putText(frame, f"CONFIDENCE: 99.8%", (x_max + 10, y_min + 20),
                              cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
-                cv2.putText(frame, f"ID: 8472-A", (x_max + 10, y_min + 40),
+                cv2.putText(frame, f"ID: 8472-{i+1}", (x_max + 10, y_min + 40),
                              cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
 
         return frame
